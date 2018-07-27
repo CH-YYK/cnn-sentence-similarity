@@ -136,13 +136,13 @@ def train(A_train, B_train, A_dev, B_dev, y_train, y_dev, word_vector):
                     cnn.dropout_keep_prob: 1.0
                 }
 
-                step, summaries, loss = sess.run(
-                    [global_step, dev_summary_op, cnn.loss],
+                step, summaries, loss, pearson = sess.run(
+                    [global_step, dev_summary_op, cnn.loss, cnn.pearson],
                     feed_dict=feed_dict
                 )
 
                 time_str = datetime.datetime.now().isoformat()
-                print("{}: step {}, loss {:g}".format(time_str, step, loss))
+                print("{}: step {}, loss {:g}, pearson {:g}".format(time_str, step, loss, pearson))
                 if writer:
                     writer.add_summary(summaries, step)
 
