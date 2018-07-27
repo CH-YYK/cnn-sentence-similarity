@@ -16,10 +16,10 @@ def preprocess():
 
     # load data
     print("load data ...")
-    sentence_A, sentence_B, y = data_helper.load_data('SICK_data.txt')
+    sentence_A, sentence_B, y = data_helper.load_data('data/SICK_data.txt')
 
     # load pre-trained word vector and build vocabulary.
-    word_vector = data_helper.word_vector('glove.6B/glove.6B.100d.txt')
+    word_vector = data_helper.word_vector('data/glove.6B.100d.txt')
     max_document_length = max([len(x.split(' ')) for x in sentence_A + sentence_B])
     word_vector.vocab_processor.max_document_length = max_document_length
 
