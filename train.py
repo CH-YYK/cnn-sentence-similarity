@@ -3,7 +3,6 @@ import os
 import time
 import numpy as np
 import tensorflow as tf
-from tensorflow.contrib import learn
 
 import data_helper
 from CNN_MODEL import CNN
@@ -17,7 +16,6 @@ def preprocess():
     # load data
     print("load data ...")
     sentence_A, sentence_B, y = data_helper.load_data('data/SICK_data.txt')
-
     # load pre-trained word vector and build vocabulary.
     word_vector = data_helper.word_vector('data/glove.6B.100d.txt')
     max_document_length = max([len(x.split(' ')) for x in sentence_A + sentence_B])
@@ -28,7 +26,7 @@ def preprocess():
 
     # randomly shuffle the data
     np.random.seed(10)
-    shuffle_indices = np.random.permutation(np.arange(y.shape[1]))
+    shuffle_indices = np.random.permutation(np.arange(len(y)))
     A_shuffled = sentence_A[shuffle_indices]
     B_shuffled = sentence_B[shuffle_indices]
     y_shuffled = y[shuffle_indices]
@@ -138,13 +136,13 @@ def train(A_train, B_train, A_dev, B_dev, y_train, y_dev, word_vector):
                     cnn.dropout_keep_prob: 1.0
                 }
 
-                step, summaries, loss, accuracy = sess.run(
+                step, summaries, loss = sess.run(
                     [global_step, dev_summary_op, cnn.loss],
-                    feed_dict
+                    feed_dict=feed_dict
                 )
 
                 time_str = datetime.datetime.now().isoformat()
-                print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+                print("{}: step {}, loss {:g}".format(time_str, step, loss))
                 if writer:
                     writer.add_summary(summaries, step)
 

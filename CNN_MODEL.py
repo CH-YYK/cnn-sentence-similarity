@@ -1,6 +1,4 @@
 import tensorflow as tf
-from tensorflow.contrib import learn
-import numpy as np
 
 class CNN(object):
     """
@@ -27,14 +25,14 @@ class CNN(object):
         # embedding layers
         with tf.device("/cpu:0"), tf.name_scope("embedding"):
             # initialize weights
-            W = tf.Variable(word_vector, name="embedding_weights", trainable=False)
+            W = tf.Variable(dtype=tf.float32, initial_value=word_vector, name="embedding_weights", trainable=False)
 
             # embedding layer for both two types of sentences
             self.embedded_chars_A = tf.nn.embedding_lookup(W, self.input_A)
             self.embedded_chars_B = tf.nn.embedding_lookup(W, self.input_B)
 
             # concate two types of sentences and then expand dim.
-            self.embedded_chars = tf.concat([self.input_A, self.input_B], axis=1)
+            self.embedded_chars = tf.concat([self.embedded_chars_A, self.embedded_chars_B], axis=1)
             self.embedded_chars_expanded = tf.expand_dims(self.embedded_chars, axis=-1)
 
 
@@ -58,7 +56,7 @@ class CNN(object):
                 h = tf.nn.relu(tf.nn.bias_add(conv, b), name='relu')
 
                 # pooling output
-                pooled = tf.nn.max_pool(h, ksize=[1, sequence_len-filter_size+1, 1, 1],
+                pooled = tf.nn.max_pool(h, ksize=[1, sequence_len*2-filter_size+1, 1, 1],   # pool filter output will be batch_size*1*1*1
                                         strides=[1, 1, 1, 1],
                                         padding='VALID',
                                         name='pool')
@@ -76,7 +74,7 @@ class CNN(object):
         # scores and prediction
         with tf.name_scope("output"):
             W = tf.Variable(tf.truncated_normal([num_filters_total, 1], stddev=0.1), name='W')
-            b = tf.Variable(tf.constant(0.1, shape=[num_filters_total]), name='b')
+            b = tf.Variable(tf.constant(0.1, shape=[1]), name='b')
 
             l2_loss += tf.nn.l2_loss(W)
             l2_loss += tf.nn.l2_loss(b)
@@ -85,7 +83,7 @@ class CNN(object):
 
         # add loss accuracy
         with tf.name_scope("loss"):
-            losses = tf.square(self.scores - self.input_y)
+            losses = tf.reduce_mean(tf.square(self.scores - self.input_y))
             self.loss = tf.reduce_mean(losses) + l2_reg_lambda * l2_loss
 
         # pearson correlation

@@ -21,12 +21,13 @@ class word_vector(object):
 
         # add an index for words that are not in word set.
         self.vocab_size = len(self.words_dict) + 1
-        self.words_dict['<unk>'] = 0
+        self.words_dict['<UNK>'] = 0
 
         # add a row of 0 for words that are not in word set.
         self.embedding_size = len(self.data[0])
         # self.data.append([0]*self.embedding_size)
         self.data = np.array(self.data)
+        self.data = np.concatenate([np.zeros([1, self.embedding_size]), self.data], axis=0)
 
         self.vocab_processor = learn.preprocessing.VocabularyProcessor(max_document_length=max_sentence_length, tokenizer_fn=self.tokenize, vocabulary=self.words_dict)
 
@@ -35,7 +36,7 @@ class word_vector(object):
             lis = []
             for j in i.split(' '):
                 if j not in self.vocab_processor.vocabulary_:
-                    j = "<unk>"
+                    j = "<UNK>"
                 lis.append(j)
             yield lis
 
