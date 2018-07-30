@@ -56,7 +56,7 @@ def train(A_train, B_train, A_dev, B_dev, y_train, y_dev, word_vector):
         with sess.as_default():
             cnn = CNN(embedding_size=word_vector.embedding_size,
                       sequence_len=word_vector.vocab_processor.max_document_length,
-                      filter_sizes=[3, 4, 5],
+                      filter_sizes=[3, 4, 5, 10],
                       num_filters=128,
                       word_vector=word_vector.data)
 
@@ -83,14 +83,15 @@ def train(A_train, B_train, A_dev, B_dev, y_train, y_dev, word_vector):
 
             # Summary for loss and accuracy
             loss_summary = tf.summary.scalar("loss", cnn.loss)
+            pearson_summary = tf.summary.scalar("pearson", cnn.pearson)
 
             # Train Summaries
-            train_summary_op = tf.summary.merge([loss_summary, grad_summaries_merged])
+            train_summary_op = tf.summary.merge([loss_summary, pearson_summary, grad_summaries_merged])
             train_summary_dir = os.path.join(out_dir, "summaries", "train")
             train_summary_writer = tf.summary.FileWriter(train_summary_dir, sess.graph)
 
             # Dev Summaries
-            dev_summary_op = tf.summary.merge([loss_summary])
+            dev_summary_op = tf.summary.merge([loss_summary, pearson_summary])
             dev_summary_dir = os.path.join(out_dir, "summaries", "dev")
             dev_summary_writer = tf.summary.FileWriter(dev_summary_dir, sess.graph)
 
@@ -115,17 +116,17 @@ def train(A_train, B_train, A_dev, B_dev, y_train, y_dev, word_vector):
                     cnn.input_A: A_batch,
                     cnn.input_B: B_batch,
                     cnn.input_y: y_batch,
-                    cnn.dropout_keep_prob: 0.6
+                    cnn.dropout_keep_prob: 1.0
                 }
 
-                _, step, summaries, loss = sess.run([train_op, global_step, train_summary_op, cnn.loss],
+                _, step, summaries, loss, pearson = sess.run([train_op, global_step, train_summary_op, cnn.loss, cnn.pearson],
                                                     feed_dict=feed_dict)
 
                 time_str = datetime.datetime.now().isoformat()
-                print("{}: step {}, loss {:g}".format(time_str, step, loss))
+                print("{}: step {}, loss {:g} pearson {:g}".format(time_str, step, loss, pearson))
                 train_summary_writer.add_summary(summaries, step)
 
-            def dev_step(A_batch, B_batch, y_batch, writer=None):
+            def dev_step(A_batch, B_batch, y_batch):
                 """
                 Evaluates model on a dev set
                 """
@@ -143,8 +144,7 @@ def train(A_train, B_train, A_dev, B_dev, y_train, y_dev, word_vector):
 
                 time_str = datetime.datetime.now().isoformat()
                 print("{}: step {}, loss {:g}, pearson {:g}".format(time_str, step, loss, pearson))
-                if writer:
-                    writer.add_summary(summaries, step)
+                dev_summary_writer.add_summary(summaries, step)
 
             # generate batches
             data_train = zip(A_train, B_train, y_train)
@@ -156,7 +156,7 @@ def train(A_train, B_train, A_dev, B_dev, y_train, y_dev, word_vector):
                 current_step = tf.train.global_step(sess, global_step)
                 if current_step % 100 == 0:
                     print("\n Evaluation:")
-                    dev_step(A_dev, B_dev, y_dev,  writer=dev_summary_writer)
+                    dev_step(A_dev, B_dev, y_dev)
                     print("")
                 if current_step % 100 == 0:
                     path = saver.save(sess, checkpoint_prefix, global_step=current_step)

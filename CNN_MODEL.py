@@ -83,7 +83,7 @@ class CNN(object):
 
         # add loss accuracy
         with tf.name_scope("loss"):
-            losses = tf.reduce_mean(tf.square(self.scores - self.input_y))
+            losses = tf.square(self.scores - self.input_y)
             self.loss = tf.reduce_mean(losses) + l2_reg_lambda * l2_loss
 
         # pearson correlation
